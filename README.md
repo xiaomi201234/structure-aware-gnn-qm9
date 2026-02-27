@@ -23,7 +23,7 @@ Future work will replace handcrafted fingerprints with learned graph neural netw
 
 ---
 
-## 📊 Targets
+## Targets
 
 We evaluate the following QM9 properties:
 
@@ -68,4 +68,60 @@ We evaluate the following QM9 properties:
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
+
+```
+.
+├── data_processing.py
+├── featurization.py
+├── random_split_experiments.py
+├── random_split_plots.py
+├── scaffold_split_experiments.py
+├── scaffold_split_plots.py
+├── Baseline_experiment.ipynb
+└── README.md
+```
+
+---
+
+## 🚀 Running the Experiments
+
+### 1️⃣ Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Required packages:
+
+- pandas  
+- numpy  
+- scikit-learn  
+- rdkit  
+- matplotlib  
+- scipy  
+
+---
+
+### 2️⃣ Run Random Split Experiments
+
+```python
+from random_split_experiments import run_random
+```
+
+---
+
+### 3️⃣ Run Scaffold Split Experiments
+
+```python
+from scaffold_split_experiments import run_scaffold
+```
+
+---
+
+##  Notes
+
+- Default dataset size: 20,000 molecules  
+- Random seed fixed for reproducibility  
+- Code follows PEP8 formatting  
+- Designed for clarity and modular experimentation  
