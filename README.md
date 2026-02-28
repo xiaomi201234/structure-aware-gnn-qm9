@@ -84,7 +84,7 @@ We evaluate the following QM9 properties:
 
 ---
 
-## 🚀 Running the Experiments
+##  Running the Experiments
 
 ### 1️⃣ Install dependencies
 
