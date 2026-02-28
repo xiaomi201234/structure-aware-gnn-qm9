@@ -119,7 +119,7 @@ from scaffold_split_experiments import run_scaffold
 
 ---
 
-##  Notes
+##  Note
 
 - Default dataset size: 20,000 molecules  
 - Random seed fixed for reproducibility  
