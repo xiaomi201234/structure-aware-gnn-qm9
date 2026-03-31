@@ -2,7 +2,7 @@ import pandas as pd
 from rdkit import Chem
 
 
-DEFAULT_QM9_COLS = ["mol_id", "smiles", "mu", "u0_atom", "homo", "lumo", "gap"]
+DEFAULT_QM9_COLS = ["mol_id", "smiles", "mu", "u0_atom", "homo", "lumo", "gap", "alpha", "cv"]
 
 
 def load_data(path="qm9.csv", n=20000):
