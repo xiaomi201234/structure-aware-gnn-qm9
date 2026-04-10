@@ -1,12 +1,12 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import NNConv, global_mean_pool
 
 
 class MPNNNet(nn.Module):
-    def __init__(self, input_dim, edge_dim, hidden_dim=128, num_layers=4, dropout=0.2):
+    def __init__(self, input_dim, edge_dim=3, hidden_dim=128, num_layers=4, dropout=0.2):
         super().__init__()
+        self.edge_dim = edge_dim
         self.convs = nn.ModuleList()
         self.bns = nn.ModuleList()
         nn1 = nn.Sequential(
@@ -25,7 +25,6 @@ class MPNNNet(nn.Module):
             )
             self.convs.append(NNConv(in_ch, hidden_dim, nn_k, aggr="mean"))
             self.bns.append(nn.BatchNorm1d(hidden_dim))
-            in_ch = hidden_dim
         nn_last = nn.Sequential(
             nn.Linear(edge_dim, hidden_dim),
             nn.ReLU(),
@@ -44,9 +43,13 @@ class MPNNNet(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
+    def _edge_attr(self, edge_index, edge_attr, ref):
+        if edge_attr is not None:
+            return edge_attr
+        return ref.new_zeros((edge_index.size(1), self.edge_dim))
+
     def forward(self, x, edge_index, batch, edge_attr=None):
-        if edge_attr is None:
-            edge_attr = torch.zeros(edge_index.size(1), 1, device=x.device, dtype=x.dtype)
+        edge_attr = self._edge_attr(edge_index, edge_attr, x)
         for conv, bn in zip(self.convs, self.bns):
             x_res = x
             x = conv(x, edge_index, edge_attr)
@@ -59,8 +62,7 @@ class MPNNNet(nn.Module):
         return self.mlp(x)
 
     def get_embedding(self, x, edge_index, batch, edge_attr=None):
-        if edge_attr is None:
-            edge_attr = torch.zeros(edge_index.size(1), 1, device=x.device, dtype=x.dtype)
+        edge_attr = self._edge_attr(edge_index, edge_attr, x)
         for conv, bn in zip(self.convs, self.bns):
             x_res = x
             x = conv(x, edge_index, edge_attr)

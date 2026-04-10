@@ -24,17 +24,15 @@ def normalize_property(data_list, property_idx, train_indices):
     return mean, std
 
 
-def train_epoch(model, loader, optimizer, criterion, device, property_idx, edge_attr=False):
+def train_epoch(model, loader, optimizer, criterion, device, property_idx, use_edge_attr=True):
     model.train()
     total_loss = 0.0
     for batch in loader:
         batch = batch.to(device)
         optimizer.zero_grad()
         target = batch.y[:, property_idx].unsqueeze(1)
-        if edge_attr and hasattr(batch, "edge_attr") and batch.edge_attr is not None:
-            pred = model(batch.x, batch.edge_index, batch.batch, batch.edge_attr)
-        else:
-            pred = model(batch.x, batch.edge_index, batch.batch)
+        edge_attr = getattr(batch, "edge_attr", None) if use_edge_attr else None
+        pred = model(batch.x, batch.edge_index, batch.batch, edge_attr)
         loss = criterion(pred, target)
         loss.backward()
         optimizer.step()
@@ -42,16 +40,14 @@ def train_epoch(model, loader, optimizer, criterion, device, property_idx, edge_
     return total_loss / len(loader)
 
 
-def evaluate(model, loader, device, property_idx, edge_attr=False):
+def evaluate(model, loader, device, property_idx, use_edge_attr=True):
     model.eval()
     preds, targets = [], []
     with torch.no_grad():
         for batch in loader:
             batch = batch.to(device)
-            if edge_attr and hasattr(batch, "edge_attr") and batch.edge_attr is not None:
-                out = model(batch.x, batch.edge_index, batch.batch, batch.edge_attr)
-            else:
-                out = model(batch.x, batch.edge_index, batch.batch)
+            edge_attr = getattr(batch, "edge_attr", None) if use_edge_attr else None
+            out = model(batch.x, batch.edge_index, batch.batch, edge_attr)
             target = batch.y[:, property_idx]
             preds.append(out.cpu().numpy().flatten())
             targets.append(target.cpu().numpy().flatten())
@@ -75,7 +71,7 @@ def train_one_property(
     lr=1e-3,
     batch_size=64,
     device=None,
-    use_edge_attr=False,
+    use_edge_attr=True,
     train_indices=None,
 ):
     if device is None:
@@ -91,14 +87,14 @@ def train_one_property(
     criterion = torch.nn.MSELoss()
     best_val_r2 = -float("inf")
     for epoch in range(epochs):
-        train_epoch(model, train_loader, optimizer, criterion, device, property_idx, edge_attr=use_edge_attr)
-        val_metrics = evaluate(model, val_loader, device, property_idx, edge_attr=use_edge_attr)
+        train_epoch(model, train_loader, optimizer, criterion, device, property_idx, use_edge_attr=use_edge_attr)
+        val_metrics = evaluate(model, val_loader, device, property_idx, use_edge_attr=use_edge_attr)
         if val_metrics["r2"] > best_val_r2:
             best_val_r2 = val_metrics["r2"]
             os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
             torch.save(model.state_dict(), save_path)
     model.load_state_dict(torch.load(save_path, weights_only=True))
-    test_metrics = evaluate(model, test_loader, device, property_idx, edge_attr=use_edge_attr)
+    test_metrics = evaluate(model, test_loader, device, property_idx, use_edge_attr=use_edge_attr)
     return {"norm_mean": norm_mean, "norm_std": norm_std, "test": test_metrics, "best_val_r2": best_val_r2}
 
 
@@ -113,7 +109,7 @@ def run_all_properties(
     lr=1e-3,
     batch_size=64,
     device=None,
-    use_edge_attr=False,
+    use_edge_attr=True,
     model_name="model",
 ):
     if device is None:
